@@ -3,7 +3,7 @@ import unittest
 import threading
 from Queue import Queue
 
-def grab(url_queue):
+def grab(url_queue,output_queue):
 	while not url_queue.empty():
 		try:
 			url = url_queue.get()
@@ -12,6 +12,7 @@ def grab(url_queue):
 			print "Could not open {url}: {} {}".format(e.errono,e.strerror)
 		else:
 			print "I've opened {}".format(url)
+			output_queue.put(url)
 			url_queue.task_done()
 
 
@@ -28,17 +29,16 @@ class Crawler:
 		self.num_threads = threads
 
 	def start_crawl(self):
+		output_queue = Queue()
 		for _ in xrange(self.num_threads):
-			t = threading.Thread(target=grab,args=(self.urls,))
+			t = threading.Thread(target=grab,args=(self.urls,output_queue))
 			t.daemon = True
 			t.start()
 		self.urls.join()
+		return output_queue
 
 	def ship_data(self,data):
 		pass
-
-
-
 
 class CrawlerTests(unittest.TestCase):
 	def setUp(self):
