@@ -21,9 +21,13 @@ def fetch_urls(reactor,url_list):
 	d_list.addCallback(all_processed)
 	return d_list
 
+def twist_grab(urls):
+	from twisted.internet.task import react
+	react(fetch_urls,argv=(urls,))
+
+
 
 
 if __name__ == '__main__':
 	urls = ['http://www.google.com','http://www.amazon.com','string','http://www.racialicious.com','http://www.groupon.com','http://www.yelp.com']
-	from twisted.internet.task import react
-	react(fetch_urls,argv=(urls,))
+	twist_grab(urls)
