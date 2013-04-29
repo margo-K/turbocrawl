@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import time
-import twistcrawl.consumer
-import twistcrawl.producer
+# import twistcrawl.consumer
+# import twistcrawl.producer
+from consumer import Consumer
+from producer import Producer
 
 def Crawler(object):
 	def __init__(self,indexer=Consumer):
@@ -13,6 +15,7 @@ def Crawler(object):
 
 	def start(self,seeds):
 		self.produce = Producer(seeds)
+		self.produce.start()
 
 	def stop(self):
 		"""Eventually, stop could mean stopping the reactor or writing the current raw data (consumer) and 
@@ -20,8 +23,15 @@ def Crawler(object):
 		pass 
 
 if __name__ == '__main__':
+	# urls = ['http://www.google.com','http://www.amazon.com','string','http://www.racialicious.com','http://www.groupon.com','http://www.yelp.com']
+	# c = Crawler()
+	# c.start(urls)
+	# time.sleep(10)
+	# c.stop()
+
+	# if __name__ == '__main__':
 	urls = ['http://www.google.com','http://www.amazon.com','string','http://www.racialicious.com','http://www.groupon.com','http://www.yelp.com']
-	c = Crawler()
-	c.start(urls)
-	time.sleep(10)
-	c.stop()
+	c = Consumer
+	p = Producer(seeds=urls,destination=c)
+	p.start()
+	p.stop()
