@@ -1,0 +1,6 @@
+*.py[cod]
+
+*crawlbenchmark.py
+*report.py
+*twisttest.py
+*venv/
