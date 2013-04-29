@@ -15,6 +15,13 @@ class Producer(object):
 			frontier[domain] = [time.time(),[]] # frontier[domain] = [next crawl time, pages to be crawled]
 		self.destination = destination
 
+	def start(self):
+		self._fetch_urls()
+		reactor.run()
+	
+	def stop(self):
+		reactor.stop()
+
 	def _getdomain(self,url):
 		"""Returns the domain of a given url"""
 		return extract(url).domain
@@ -28,13 +35,13 @@ class Producer(object):
 
 	def _process_page(self,output,url):
 		destination.send((url,output))
-
-	def start(self):
-		self.fetch_urls()
-		reactor.run()
-	
-	def stop(self):
-		reactor.stop()
+		
+	def _update_frontier(self):
+		url_tuples = destination.retrieve_urls() # list of tuples:: (parent_url,links)
+		for url_tuple in url_tuples:
+			parent_url, links = url_tuple
+			for link in links:
+				if self.checkinsert(link,parent_url):
 
 	def _fetch_urls(self):
 		print "Started fetching"
@@ -43,9 +50,9 @@ class Producer(object):
 			if self.frontier[0] < time.time():
 				print "Fetching {}".format(url)
 				d = getPage(url)
-				d.addCallback(_process_page,url)
+				d.addCallback(self._process_page,url)
 				prep_list.append(d)
 		d_list = DeferredList(prep_list,consumeErrors=True)
-		d_list.addCallback(all_processed)
+		d_list.addCallback(self._fetch_urls)
 		return d_list
 
