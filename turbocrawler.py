@@ -15,8 +15,6 @@ def grab(url_queue,output_queue):
 			output_queue.put(url)
 			url_queue.task_done()
 
-
-	
 class Crawler:
 	"""Crawler will take a given page as input, 
 	grab its contents and spit them out to some outside process"""
@@ -39,7 +37,7 @@ class Crawler:
 
 	def ship_data(self,data):
 		pass
-
+ 
 class CrawlerTests(unittest.TestCase):
 	def setUp(self):
 		urls = ['http://www.google.com','http://www.amazon.com','http://www.nytimes.com','http://www.racialicious.com','http://www.groupon.com','http://www.yelp.com']
