@@ -34,9 +34,8 @@ If you want to do something useful with the urls:
 
 ```python
 
-c = Crawler()
+c = Crawler.custom(index=myindexer)
 c.start(seeds)
-c.index(indexer=myindexer) # Indexer Should take
 
 ```
 
