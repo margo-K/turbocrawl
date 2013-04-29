@@ -15,10 +15,12 @@ will only be made if a performance test can justify the change.
 * twistedcrawler : crawler built using Twisted
 
 ###Process
-####Stage One
+####Stage 1
 * test the speed of just grabbing html using the turbocrawler grab function vs. twistedcrawler's getpage for 
   a large set of urls (try: 1000, 10000, 100000)
 * predict gains incurred from using the faster option
+####Stage 2
+* build crawler with twisted-based architecture
 
 ###Getting Started
 ####Requirements
@@ -28,3 +30,8 @@ will only be made if a performance test can justify the change.
 * currently, each crawler only grabs html (as this is the functionality being tested in Stage One)
 
 ###Architecture
+
+
+
+###TO-DOs:
+* apply filtering to insure only clickable links get crawled (and not other things in 'href' <a> tags)
