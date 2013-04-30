@@ -11,10 +11,6 @@ class Consumer(object):
 	def __init__(self):
 		self.raw_data = {} # key: url, value: html
 
-	def start(self):
-		"""Starts the consumer process"""
-		pass
-
 	def send(self,tup):
 		url = tup[0]
 		data = tup[1]
