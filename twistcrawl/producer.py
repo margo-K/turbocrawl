@@ -6,6 +6,14 @@ from twisted.internet import reactor
 from tldextract import extract
 import time
 
+def process_page(output,url):
+	print "Processing {}".format(url)
+	self.destination.send(url,output)
+
+def confirmation(output):
+	print "All done! {}".format(output)
+	reactor.stop()
+
 class Producer(object):
 	"""The producer is responsible for taking the seed urls, grabbing their data and sending it to the consumer """
 	def __init__(self,seeds,destination):
@@ -33,9 +41,6 @@ class Producer(object):
 			return True
 		return False
 
-	def _process_page(self,output,url):
-		self.destination.send(url,output)
-
 	def _update_frontier(self):
 		url_tuples = self.destination.retrieve_urls() # list of tuples:: (parent_url,links)
 		for url_tuple in url_tuples:
@@ -43,7 +48,6 @@ class Producer(object):
 			for link in links:
 				if self._checkinsert(link,parent_url):
 					entry = self.frontier[self._getdomain(link)]
-					# entry[0] = time.time() + 1
 					entry[1].append(link)
 
 	def _fetch_urls(self,_):
@@ -53,9 +57,23 @@ class Producer(object):
 			# if self.frontier[url][0] < time.time():
 			print "Fetching {}".format(url)
 			d = getPage(url)
-			d.addCallback(self._process_page,url)
+			d.addCallback(process_page,url)
 			prep_list.append(d)
 		d_list = DeferredList(prep_list,consumeErrors=True)
-		# d_list.addCallback(self._fetch_urls)
+		d_list.addCallback(confirmation)
 		return d_list
+
+class FauxConsumer(object):
+	def send(self,url,output):
+		print "Sending "
+
+	def retrieve_urls(self):
+		"""Returns a list of tuples of the form [(parent_url,links)]"""
+		pass
+
+
+if __name__  == '__main__':
+	urls = ['http://www.google.com','http://www.amazon.com','string','http://www.racialicious.com','http://www.groupon.com','http://www.yelp.com']
+	p = Producer(seeds=urls,destination=FauxConsumer())
+	p.start()
 
