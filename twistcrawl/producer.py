@@ -20,11 +20,11 @@ class Producer(object):
 		self.frontier = {}
 		for url in seeds:
 			domain = self._getdomain(url)
-			self.frontier[domain] = [time.time(),[]] # frontier[domain] = [next crawl time, pages to be crawled]
+			self.frontier[domain] = [time.time(),[url]] # frontier[domain] = [next crawl time, pages to be crawled]
 		self.destination = destination
 
 	def start(self):
-		self._fetch_urls('thing')
+		self._fetch_urls()
 		reactor.run()
 	
 	def stop(self):
@@ -50,22 +50,23 @@ class Producer(object):
 					entry = self.frontier[self._getdomain(link)]
 					entry[1].append(link)
 
-	def _fetch_urls(self,_):
+	def _fetch_urls(self):
 		print "Started fetching"
 		prep_list = []
-		for url in self.frontier:
+		for domain in self.frontier:
 			# if self.frontier[url][0] < time.time():
-			print "Fetching {}".format(url)
-			d = getPage(url)
-			d.addCallback(process_page,url)
-			prep_list.append(d)
+			for url in self.frontier[domain][1]:
+				print "Fetching {}".format(url)
+				d = getPage(url)
+				d.addCallback(process_page,url)
+				prep_list.append(d)
 		d_list = DeferredList(prep_list,consumeErrors=True)
 		d_list.addCallback(confirmation)
 		return d_list
 
 class FauxConsumer(object):
 	def send(self,url,output):
-		print "Sending "
+		print "Sending {}'s data".format(url)
 
 	def retrieve_urls(self):
 		"""Returns a list of tuples of the form [(parent_url,links)]"""
