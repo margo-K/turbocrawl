@@ -6,12 +6,14 @@ from twisted.internet import reactor
 from tldextract import extract
 import time
 
-def process_page(output,url):
+def process_page(output,url,startime):
 	print "Processing {}".format(url)
-	self.destination.send(url,output)
+	return url,time.time()-startime
+	# self.destination.send(url,output)
 
 def confirmation(output):
-	print "All done! {}".format(output)
+	times = [(url,time) for (b, (url, time)) in output]
+	print "All done! Times: {}".format(times)
 	reactor.stop()
 
 class Producer(object):
@@ -58,7 +60,7 @@ class Producer(object):
 			for url in self.frontier[domain][1]:
 				print "Fetching {}".format(url)
 				d = getPage(url)
-				d.addCallback(process_page,url)
+				d.addCallback(process_page,url,time.time())
 				prep_list.append(d)
 		d_list = DeferredList(prep_list,consumeErrors=True)
 		d_list.addCallback(confirmation)
@@ -74,7 +76,7 @@ class FauxConsumer(object):
 
 
 if __name__  == '__main__':
-	urls = ['http://www.google.com','http://www.amazon.com','string','http://www.racialicious.com','http://www.groupon.com','http://www.yelp.com']
+	urls = ['http://www.google.com','http://www.amazon.com','http://www.racialicious.com','http://www.groupon.com','http://www.yelp.com']
 	p = Producer(seeds=urls,destination=FauxConsumer())
 	p.start()
 
