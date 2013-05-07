@@ -2,15 +2,32 @@
 from twisted.web.client import getPage
 from twisted.internet.defer import DeferredList, Deferred
 from twisted.internet import reactor
+from urlparse import urljoin
+import pprint 
 
 from tldextract import extract
 import time
 import sys
+from bs4 import BeautifulSoup
 
 def confirmation(output):
-	# times = [(url,time) for (b, (url, time)) in output]
 	print "All done!"
-	# reactor.stop()
+
+def normalize(url):
+    return url if url.endswith('/') else url + '/'
+
+def prep_page(html):
+	return BeautifulSoup(html)
+
+def get_page_links(bs4_soup):
+	"""Returns a list of href links in a page"""
+	return [link.get('href') for link in bs4_soup.find_all('a')]
+	
+def format_urls(parent_url,url_list):
+	"""Returns a set of absolute urls
+	* anchor tags are removed
+	* all urls are normalized to end with a '/' """
+	return set([normalize(urljoin(parent_url,url).split('#')[0]) for url in url_list])
 
 class Producer(object):
 	"""The producer is responsible for taking the seed urls, grabbing their data and sending it to the consumer """
@@ -51,10 +68,11 @@ class Producer(object):
 	def process_page(self,output,url):
 		print "Processing {}".format(url)
 		d = self.destination.send(url,output)
-		d.addCallback(self.callback_fn)
+		d.addCallback(self.callback_fn) # function that gets called back when the stuff from sending returns (i.e. the list of urls)
 
 	def callback_fn(self,data):
-		print "I've called back: {}".format(data)
+		print "I've called back."
+		#self._update_frontier([(parent_url,links)])
 
 	def _fetch_urls(self):
 		print "Started fetching"
@@ -77,18 +95,42 @@ class FauxConsumer(object):
 	def send(self,url,output):
 		print "Sending {}'s data".format(url)
 		self.deferreds[url] = Deferred()
-		reactor.callLater(5,self.retrieve_urls,url)
+		self.retrieve_urls(url)
+		reactor.callLater(5,self.retrieve_urls,url)# calls this function after 5 seconds; note, without this function callbacks get executed right away (but still called)
 		return self.deferreds[url]
 
 	def retrieve_urls(self,url):
-		"""Returns a list of tuples of the form [(parent_url,links)]"""
-		self.deferreds[url].callback(url*4)	
+		"""Returns tuples of the form (parent_url,links)"""
+		print "Retriev_urls with arg: {}".format(url)
+		self.deferreds[url].callback(url*4)	#adds a callback when this funciton gets called, url*4 becomes the data from the callback
+
+class Consumer(object):	
+	"""The consumer is responsible for accepting html and producing content from what it's received
+
+	Currently, it only exports urls, but it could conceivably work with an indexer
+	which would do something with the other data in the page"""
+	def __init__(self):
+		self.raw_data = {} # key: url, value: html
+		self.deferreds = {}
+
+	def send(self,url,output):
+		print "Sending {}'s data".format(url)
+		self.deferreds[url] = Deferred()
+		self.raw_data[url] = output
+		self.retrieve_urls(url)
+		return self.deferreds[url]
+	
+	def retrieve_urls(self,url):
+		print "Retrieving urls from {}".format(url)
+		links = get_page_links(prep_page(self.raw_data[url]))
+		formatted_urls = format_urls(parent_url=url,url_list=links)
+		self.deferreds[url].callback(formatted_urls)
 
 
 if __name__  == '__main__':
 	urls = ['http://www.google.com','http://www.amazon.com','http://www.racialicious.com','http://www.groupon.com','http://www.yelp.com']
 	ttime = sys.argv[1]
 	reactor.callLater(float(ttime),reactor.stop)
-	p = Producer(seeds=urls,destination=FauxConsumer())
+	p = Producer(seeds=urls,destination=Consumer())
 	p.start()
 
