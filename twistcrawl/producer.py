@@ -50,30 +50,15 @@ class Producer(object):
 		"""Returns the domain of a given url"""
 		return extract(url).domain
 
-	def _checkinsert(self,url,parent):
-		"""Checks whether a url can be put into the url frontier for its domain"""
-		domain = self._getdomain(url)
-		if domain == self._getdomain(parent) and url not in self.frontier[domain][1]:
-			return True
-		return False
-
-	def _update_frontier(self):
-		url_tuples = self.destination.retrieve_urls() # list of tuples:: (parent_url,links)
-		for url_tuple in url_tuples:
-			parent_url, links = url_tuple
-			for link in links:
-				if self._checkinsert(link,parent_url):
-					entry = self.frontier[self._getdomain(link)]
-					entry[1].append(link)
+	def callback_fn(self,data,url):
+		print "I've called back. I will be adding {} to the frontier because of {}".format(data,url)
+		#self._update_frontier([(parent_url,links)])
 
 	def process_page(self,output,url):
 		print "Processing {}".format(url)
 		d = self.destination.send(url,output)
+		print "deferred from {}: {}".format(url,d)
 		d.addCallback(self.callback_fn) # function that gets called back when the stuff from sending returns (i.e. the list of urls)
-
-	def callback_fn(self,data):
-		print "I've called back. I will be adding {} to the frontier".format(data)
-		#self._update_frontier([(parent_url,links)])
 
 	def _fetch_urls(self):
 		print "Started fetching"
@@ -117,17 +102,16 @@ class Consumer(object):
 
 	def send(self,url,output):
 		print "Sending {}'s data".format(url)
-		self.deferreds[url] = Deferred()
 		self.raw_data[url] = output
-		self.retrieve_urls(url)
+		self.deferreds[url] = Deferred()
+		reactor.callLater(3,self.retrieve_urls,url)
 		return self.deferreds[url]
 	
 	def retrieve_urls(self,url):
 		print "Retrieving urls from {}".format(url)
 		links = get_page_links(prep_page(self.raw_data[url]))
 		formatted_urls = format_urls(parent_url=url,url_list=links)
-		self.deferreds[url].callback(formatted_urls,url)
-
+		self.deferreds[url].callback((formatted_urls,url))
 
 if __name__  == '__main__':
 	urls = ['http://www.google.com','http://www.amazon.com','http://www.racialicious.com','http://www.groupon.com','http://www.yelp.com']
