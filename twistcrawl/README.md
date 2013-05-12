@@ -16,33 +16,40 @@ a list of seed urls and performs a breadth-first traversal through the links fro
 
 ##How to use it
 
-Each crawler instance is meant to be able to run in completely separate process. Starting with a list of seed urls, you can use the helper functions to triage them across different instances of the crawler (on separate EC2 instances, on different machines, etc.)
+Each crawler instance is meant to be able to run in completely separate process. Starting with a list of seed urls, you can use helper functions to triage them across different instances of the crawler (on separate EC2 instances, on different machines, etc.)
 
-###One crawler instance
+##Examples
+###One crawler, running for 100 seconds on a list of 6 seed urls
 
-```python
-  seeds = ['http://www.google.com','http://www.amazon.com','string','http://www.racialicious.com','http://www.groupon.com','http://www.yelp.com']
+```bash
+$python producer.py 100
 
-  c = Crawler()
-  c.start(seeds)
-  c.stop()
+Started fetching
+Fetching http://www.racialicious.com
+Fetching http://www.amazon.com
+Fetching http://www.google.com
+Fetching http://www.groupon.com
+Fetching http://www.yelp.com
+Processing http://www.google.com
+Sending http://www.google.com's data
+Processing http://www.groupon.com
+Sending http://www.groupon.com's data
+Processing http://www.racialicious.com
+Sending http://www.racialicious.com's data
+Processing http://www.amazon.com
+Sending http://www.amazon.com's data
+Processing http://www.yelp.com
+Sending http://www.yelp.com's data
+All done!
+
 
 ```
 
-###Feeding in an indexer
-If you want to do something useful with the urls:
-
-```python
-
-c = Crawler.custom(index=myindexer)
-c.start(seeds)
-
-```
 
 ##Status
-
 ###What works
+* the deferreds are returning when they should
 
 
 ###What doesn't work
-* API as described doesn't exist
+* the callback function they are provided are not the correct ones

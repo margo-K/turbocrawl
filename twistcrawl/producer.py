@@ -10,8 +10,8 @@ import time
 import sys
 from bs4 import BeautifulSoup
 
-def confirmation(output):
-	print "All done!"
+def confirmation(output,round_count):
+	print "All done with crawl round {}!".format(round_count)
 
 def normalize(url):
     return url if url.endswith('/') else url + '/'
@@ -37,6 +37,7 @@ class Producer(object):
 			domain = self._getdomain(url)
 			self.frontier[domain] = [time.time(),[url]] # frontier[domain] = [next crawl time, pages to be crawled]
 		self.destination = destination
+		self.crawlcount = 0
 
 	def start(self):
 		self._fetch_urls()
@@ -71,7 +72,7 @@ class Producer(object):
 		d.addCallback(self.callback_fn) # function that gets called back when the stuff from sending returns (i.e. the list of urls)
 
 	def callback_fn(self,data):
-		print "I've called back."
+		print "I've called back. I will be adding {} to the frontier".format(data)
 		#self._update_frontier([(parent_url,links)])
 
 	def _fetch_urls(self):
@@ -85,7 +86,8 @@ class Producer(object):
 				d.addCallback(self.process_page,url)
 				prep_list.append(d)
 		d_list = DeferredList(prep_list,consumeErrors=True)
-		d_list.addCallback(confirmation)
+		self.crawlcount+=1
+		d_list.addCallback(confirmation,self.crawlcount)
 		return d_list
 
 class FauxConsumer(object):
@@ -124,7 +126,7 @@ class Consumer(object):
 		print "Retrieving urls from {}".format(url)
 		links = get_page_links(prep_page(self.raw_data[url]))
 		formatted_urls = format_urls(parent_url=url,url_list=links)
-		self.deferreds[url].callback(formatted_urls)
+		self.deferreds[url].callback(formatted_urls,url)
 
 
 if __name__  == '__main__':
