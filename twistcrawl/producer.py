@@ -9,9 +9,11 @@ from tldextract import extract
 import time
 import sys
 from bs4 import BeautifulSoup
+import pprint
 
-def confirmation(output,round_count):
+def confirmation(output,round_count,fn):
 	print "All done with crawl round {}!".format(round_count)
+	fn()
 
 def normalize(url):
     return url if url.endswith('/') else url + '/'
@@ -35,7 +37,7 @@ class Producer(object):
 		self.frontier = {}
 		for url in seeds:
 			domain = self._getdomain(url)
-			self.frontier[domain] = [time.time(),[url]] # frontier[domain] = [next crawl time, pages to be crawled]
+			self.frontier[domain] = [0,[url]] # frontier[domain] = [next crawl time, pages to be crawled]
 		self.destination = destination
 		self.crawlcount = 0
 
@@ -50,9 +52,18 @@ class Producer(object):
 		"""Returns the domain of a given url"""
 		return extract(url).domain
 
+	def _update_frontier(self,parent_url,links):
+		domain = self._getdomain(parent_url)
+		for link in links:
+			if domain == self._getdomain(link) and link not in self.frontier[domain][1]:
+				self.frontier[domain][1].append(link)
+				self.frontier[domain][0]=time.time()+70 # Next acceptable crawl time is 70 seconds from now
+
 	def callback_fn(self,data):
+		url = data[1]
+		links = data[0]
 		print "I've called back. I will be adding links to the frontier because of {}".format(data[1])
-		#self._update_frontier([(parent_url,links)])
+		self._update_frontier(url,links)
 
 	def process_page(self,output,url):
 		print "Processing {}".format(url)
@@ -63,15 +74,16 @@ class Producer(object):
 		print "Started fetching"
 		prep_list = []
 		for domain in self.frontier:
-			# if self.frontier[url][0] < time.time():
-			for url in self.frontier[domain][1]:
-				print "Fetching {}".format(url)
-				d = getPage(url)
-				d.addCallback(self.process_page,url)
-				prep_list.append(d)
+			if time.time()>self.frontier[domain][0]:
+				print "{} is okay to recrawl.".format(domain)
+				for url in self.frontier[domain][1]:
+					print "Fetching {}".format(url)
+					d = getPage(url)
+					d.addCallback(self.process_page,url)
+					prep_list.append(d)
 		d_list = DeferredList(prep_list,consumeErrors=True)
 		self.crawlcount+=1
-		d_list.addCallback(confirmation,self.crawlcount)
+		d_list.addCallback(confirmation,self.crawlcount,self._fetch_urls)
 		return d_list
 
 class FauxConsumer(object):
