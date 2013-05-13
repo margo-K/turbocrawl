@@ -84,6 +84,7 @@ class Producer(object):
 		d_list = DeferredList(prep_list,consumeErrors=True)
 		self.crawlcount+=1
 		d_list.addCallback(confirmation,self.crawlcount,self._fetch_urls)
+		print "These are the callbacks for the list: {}".format(d_list.)
 		return d_list
 
 class FauxConsumer(object):
@@ -126,8 +127,11 @@ class Consumer(object):
 
 if __name__  == '__main__':
 	urls = ['http://www.google.com','http://www.amazon.com','http://www.racialicious.com','http://www.groupon.com','http://www.yelp.com']
-	ttime = sys.argv[1]
-	reactor.callLater(float(ttime),reactor.stop)
-	p = Producer(seeds=urls,destination=Consumer())
-	p.start()
+	if len(sys.argv)==2:
+		ttime = sys.argv[1]
+		reactor.callLater(float(ttime),reactor.stop)
+		p = Producer(seeds=urls,destination=Consumer())
+		p.start()
+	else:
+		print "Please retry with a time parameter."
 
