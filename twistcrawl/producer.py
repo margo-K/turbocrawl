@@ -50,8 +50,8 @@ class Producer(object):
 		"""Returns the domain of a given url"""
 		return extract(url).domain
 
-	def callback_fn(self,data,url):
-		print "I've called back. I will be adding {} to the frontier because of {}".format(data,url)
+	def callback_fn(self,data):
+		print "I've called back. I will be adding {} to the frontier because of {}".format(data[0],data[1])
 		#self._update_frontier([(parent_url,links)])
 
 	def process_page(self,output,url):
