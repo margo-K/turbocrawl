@@ -51,13 +51,12 @@ class Producer(object):
 		return extract(url).domain
 
 	def callback_fn(self,data):
-		print "I've called back. I will be adding {} to the frontier because of {}".format(data[0],data[1])
+		print "I've called back. I will be adding links to the frontier because of {}".format(data[1])
 		#self._update_frontier([(parent_url,links)])
 
 	def process_page(self,output,url):
 		print "Processing {}".format(url)
 		d = self.destination.send(url,output)
-		print "deferred from {}: {}".format(url,d)
 		d.addCallback(self.callback_fn) # function that gets called back when the stuff from sending returns (i.e. the list of urls)
 
 	def _fetch_urls(self):
@@ -104,7 +103,7 @@ class Consumer(object):
 		print "Sending {}'s data".format(url)
 		self.raw_data[url] = output
 		self.deferreds[url] = Deferred()
-		reactor.callLater(3,self.retrieve_urls,url)
+		self.retrieve_urls(url)
 		return self.deferreds[url]
 	
 	def retrieve_urls(self,url):
