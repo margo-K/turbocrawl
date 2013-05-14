@@ -10,6 +10,7 @@ import time
 import sys
 from bs4 import BeautifulSoup
 import pprint
+import pdb
 
 def confirmation(output,round_count,fn):
 	print "All done with crawl round {}!".format(round_count)
@@ -37,7 +38,7 @@ class Producer(object):
 		self.frontier = {}
 		for url in seeds:
 			domain = self._getdomain(url)
-			self.frontier[domain] = [0,[url]] # frontier[domain] = [next crawl time, pages to be crawled]
+			self.frontier[domain] = [0,[url],0] # frontier[domain] = [next crawl time, pages to be crawled]
 		self.destination = destination
 		self.crawlcount = 0
 
@@ -54,6 +55,8 @@ class Producer(object):
 
 	def _update_frontier(self,parent_url,links):
 		domain = self._getdomain(parent_url)
+		last_location = len(self.frontier[domain][1])
+		self.frontier[domain][2] = last_location
 		for link in links:
 			if domain == self._getdomain(link) and link not in self.frontier[domain][1]:
 				self.frontier[domain][1].append(link)
@@ -72,19 +75,25 @@ class Producer(object):
 
 	def _fetch_urls(self):
 		print "Started fetching"
+		pdb.set_trace()
 		prep_list = []
 		for domain in self.frontier:
-			if time.time()>self.frontier[domain][0]:
+			frontier = self.frontier[domain]
+			if time.time()>frontier[0]:
 				print "{} is okay to recrawl.".format(domain)
-				for url in self.frontier[domain][1]:
-					print "Fetching {}".format(url)
-					d = getPage(url)
-					d.addCallback(self.process_page,url)
-					prep_list.append(d)
+				try:
+					for url in frontier[1][frontier[2]:]:
+						print "Fetching {}".format(url)
+						d = getPage(url)
+						d.addCallback(self.process_page,url)
+						prep_list.append(d)
+				except IndexError:
+					print "Nothing left to crawl"
 		d_list = DeferredList(prep_list,consumeErrors=True)
+		pdb.set_trace()
 		self.crawlcount+=1
 		d_list.addCallback(confirmation,self.crawlcount,self._fetch_urls)
-		print "These are the callbacks for the list: {}".format(d_list.)
+		print "These are the callbacks for the list: {}".format(d_list.callbacks)
 		return d_list
 
 class FauxConsumer(object):
