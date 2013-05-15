@@ -1,37 +1,55 @@
-#Turbocrawl
-This project was inspired by Michael Nielsen's [How to Crawl a Quarter Billion Webpages in 40 Hours](http://www.michaelnielsen.org/ddi/how-to-crawl-a-quarter-billion-webpages-in-40-hours/) blog post.
+TwistedCrawl
+=========
 
-Nielsen's crawler architecture employs threads to reduce idle time incurred when waiting
-for the response from an http request. turbocrawler will instead use evented architecture 
-while trying to recreate the rest of the approach described by Nielsen (url frontier, domains 
-assigned to specific instances). 
+TwistedCrawl is inspired by a blog post - [How to Crawl a Quarter Billion Webpages in 40 Hours](http://www.michaelnielsen.org/ddi/how-to-crawl-a-quarter-billion-webpages-in-40-hours/).
 
-Additionally, I will use basic benchmarking of individual components of the design to inform 
-hypotheses about performance gains as the project scales. Any alterations to Nielsen's design
-will only be made if a performance test can justify the change.
+The author of the post built out a crawler architecture that works across 20 EC2 instances using a large number of threads to reduce idle time incurred when waiting for an http request response. TwistedCrawler instead uses Twisted to produce an evented architecture so all html is retrieved asynchronously. 
 
-###Contents
-* turbocrawler.py : crawler built for use with threads
-* twistedcrawler : crawler built using Twisted
+##How it works
 
-###Process
-####Stage 1
-* test the speed of just grabbing html using the turbocrawler grab function vs. twistedcrawler's getpage for 
-  a large set of urls (try: 1000, 10000, 100000)
-* predict gains incurred from using the faster option
-####Stage 2
-* build crawler with twisted-based architecture
+The crawler asynchronously fetches html from provided links using Twisted. It starts with
+a list of seed urls and performs a breadth-first traversal through the links from each page, with a few alterations:
 
-###Getting Started
-####Requirements
-- Twisted 
-
-###Status
-* currently, each crawler only grabs html (as this is the functionality being tested in Stage One)
-
-###Architecture
+1. each individual crawler instance only crawls links from its 'portion' of the web - i.e. its list of domains
+2. a crawler actually dumps data into an indexer's 'bucket' and the indexer generates new urls
 
 
+##How to use it
 
-###TO-DOs:
-* apply filtering to insure only clickable links get crawled (and not other things in 'href' <a> tags)
+Each crawler instance is meant to be able to run in completely separate process. Starting with a list of seed urls, you can use helper functions to triage them across different instances of the crawler (on separate EC2 instances, on different machines, etc.)
+
+##Examples
+###One crawler, running for 100 seconds on a list of 6 seed urls
+
+```bash
+$python producer.py 100
+
+Started fetching
+Fetching http://www.racialicious.com
+Fetching http://www.amazon.com
+Fetching http://www.google.com
+Fetching http://www.groupon.com
+Fetching http://www.yelp.com
+Processing http://www.google.com
+Sending http://www.google.com's data
+Processing http://www.groupon.com
+Sending http://www.groupon.com's data
+Processing http://www.racialicious.com
+Sending http://www.racialicious.com's data
+Processing http://www.amazon.com
+Sending http://www.amazon.com's data
+Processing http://www.yelp.com
+Sending http://www.yelp.com's data
+All done!
+
+
+```
+
+
+##Status
+###What works
+* the deferreds are returning when they should
+
+
+###What doesn't work
+* the callback function they are provided are not the correct ones

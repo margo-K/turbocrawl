@@ -1,6 +1,8 @@
 *.py[cod]
 
-*crawlbenchmark.py
-*report.py
-*twisttest.py
 *venv/
+*bugs/
+*READMEprocess.md
+*crawlbenchmark.py
+*twistcrawl/
+*.DS_Store
